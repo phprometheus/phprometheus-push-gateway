@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace SiteService\Infrastructure\Prometheus;
 
+use Phprometheus\AbstractPrometheus;
+use Phprometheus\Prometheus;
 use Psr\Log\LoggerInterface;
 use Prometheus\Storage\InMemory;
 use Prometheus\CollectorRegistry;
