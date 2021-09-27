@@ -1,8 +1,13 @@
-name: Main branch workflow
+name: Release new version
 on:
   push:
     branches:
       - main
+    paths-ignore:
+      - README.md
+      - .gitignore
+      - .github/**
+      - Makefile
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -12,5 +17,5 @@ jobs:
         uses: anothrNick/github-tag-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#          DEFAULT_BUMP: patch
+          DEFAULT_BUMP: patch
           WITH_V: true

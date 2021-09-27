@@ -2,21 +2,38 @@
 
 declare(strict_types=1);
 
-namespace SiteService\Infrastructure\Prometheus;
+namespace Phprometheus\PushGateway;
 
-use Phprometheus\AbstractPrometheus;
-use Phprometheus\Prometheus;
+use RuntimeException;
 use Psr\Log\LoggerInterface;
+use Phprometheus\Prometheus;
 use Prometheus\Storage\InMemory;
 use Prometheus\CollectorRegistry;
+use Phprometheus\AbstractPrometheus;
 use PrometheusPushGateway\PushGateway;
 use GuzzleHttp\Exception\GuzzleException;
 
 class PushGatewayExporter extends AbstractPrometheus implements Prometheus
 {
+    /**
+     * @var string
+     */
     private $job;
+
+    /**
+     * @var PushGateway
+     */
     private $pushGateway;
+
+    /**
+     * @var LoggerInterface|null
+     */
     private $logger;
+
+    /**
+     * @var CollectorRegistry
+     */
+    protected $registry;
 
     public function __construct(
         string $namespace,
@@ -28,16 +45,23 @@ class PushGatewayExporter extends AbstractPrometheus implements Prometheus
         $this->pushGateway = $pushGateway;
         $this->logger = $logger;
 
-        parent::__construct($namespace, new CollectorRegistry(new InMemory()));
+        parent::__construct($namespace, new CollectorRegistry(new InMemory(), false));
     }
 
     public function flush(): array
     {
         try {
             $this->pushGateway->push(
-                $this->collectorRegistry,
+                $this->registry,
                 $this->job,
             );
+        } catch (RuntimeException $e) {
+            if (! is_null($this->logger)) {
+                $this->logger->error('Failed to push metrics to PushGateway', [
+                    'reason' => $e->getMessage(),
+                    'code' => $e->getCode(),
+                ]);
+            }
         } catch (GuzzleException $e) {
             if (! is_null($this->logger)) {
                 $this->logger->error('Failed to push metrics to PushGateway', [
